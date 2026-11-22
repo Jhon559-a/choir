@@ -1,0 +1,617 @@
+<title>찬양대 줄세우기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Black+Han+Sans&display=swap">
+<style>
+/* Layout: 한 손 세로 화면 — 입력(2x2) → 3D 찬양대석 → 줄별 세우기 카드(뒷줄 위, 앞줄 아래) → 표 → 설정 */
+:root{
+  --bg:#f3f1ec; --panel:#ffffff; --line:#ddd7cc; --fg:#1d1a16; --muted:#6c655b;
+  --wood:#c9a173; --wood-top:#e3c49b; --wood-dark:#9c7448; --hall:#e9e3d8;
+  --sop:#d9475d; --alt:#c98a00; --ten:#1e88c7; --bas:#4a52c9;
+  --accent:#1d1a16; --btn:#efe9df;
+  --f-display:"Black Han Sans","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14120f; --panel:#1f1c18; --line:#36312a; --fg:#f6f1e8; --muted:#b3aa9c;
+  --wood:#8a6438; --wood-top:#b38552; --wood-dark:#5c4024; --hall:#1a1714;
+  --sop:#ff7487; --alt:#ffc23d; --ten:#4fc3f7; --bas:#8f98ff;
+  --accent:#f6f1e8; --btn:#2c2822; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#14120f; --panel:#1f1c18; --line:#36312a; --fg:#f6f1e8; --muted:#b3aa9c;
+  --wood:#8a6438; --wood-top:#b38552; --wood-dark:#5c4024; --hall:#1a1714;
+  --sop:#ff7487; --alt:#ffc23d; --ten:#4fc3f7; --bas:#8f98ff;
+  --accent:#f6f1e8; --btn:#2c2822; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.7rem;line-height:1.1;margin:0;letter-spacing:.01em}
+.sub{color:var(--muted);font-size:.85rem;margin:4px 0 0}
+.total{text-align:right;flex-shrink:0}
+.total b{font-family:var(--f-display);font-weight:400;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.total span{display:block;color:var(--muted);font-size:.8rem}
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.part{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 10px 12px;display:flex;flex-direction:column;gap:8px}
+.part .name{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem}
+.dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.part .name small{color:var(--muted);font-weight:400;font-size:.78rem}
+.stepper{display:grid;grid-template-columns:48px 1fr 48px;gap:6px;align-items:center}
+.stepper button{height:52px;border-radius:12px;border:0;background:var(--btn);color:var(--fg);font-size:1.6rem;font-weight:700;cursor:pointer;touch-action:manipulation}
+.stepper button:active{transform:scale(.95)}
+.stepper input{height:52px;width:100%;min-width:0;text-align:center;font-family:var(--f-display);font-size:1.9rem;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg);font-variant-numeric:tabular-nums}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--ten);outline-offset:2px}
+.stage{background:var(--hall);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative}
+.stage canvas{display:block;width:100%;height:auto}
+#three{width:100%;touch-action:none}
+#three canvas{display:block}
+.views{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
+.views button{height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:500 .85rem var(--f-body);cursor:pointer}
+.views button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.stage .cap{z-index:1}
+.colbadge{position:absolute;right:10px;top:8px;z-index:2;background:var(--accent);color:var(--bg);border-radius:12px;padding:6px 12px;text-align:center;line-height:1.1;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.colbadge small{display:block;font-size:.7rem;font-weight:600;opacity:.85}
+.colbadge b{font:800 1.7rem var(--f-body)}
+.colbadge b i{font-style:normal;font-size:.95rem;font-weight:700;margin-left:2px}
+.colbadge[hidden]{display:none}
+.guides{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.guides button{height:48px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:600 .95rem var(--f-body);cursor:pointer}
+.guides button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.rowsel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rowsel button{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:600 .95rem var(--f-body);cursor:pointer;line-height:1.25}
+.rowsel button small{display:block;font-weight:500;font-size:.72rem;opacity:.8}
+.rowsel button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.rowrec{margin:8px 0 0;font-size:.9rem}
+#zig{min-height:56px;border-radius:14px;font:700 1rem var(--f-body);cursor:pointer;border:2px solid var(--accent);background:transparent;color:var(--accent);transition:background .15s,color .15s}
+#zig::before{content:"○  "}
+#zig[aria-pressed="true"]{background:var(--accent);color:var(--bg);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+#zig[aria-pressed="true"]::before{content:"●  "}
+.stage .cap{position:absolute;left:12px;top:10px;font-size:.75rem;color:var(--muted);letter-spacing:.04em}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+h2{font-size:1.05rem;margin:0 0 4px;font-weight:700}
+.hint{color:var(--muted);font-size:.85rem;margin:0}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:54px 1fr;gap:4px 10px;align-items:center}
+.row .rn{grid-row:span 4;text-align:center}
+.ruler{position:relative;height:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;border-radius:6px;overflow:hidden;background:var(--line)}
+.ruler span{background:var(--btn)}
+.ruler i{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;box-shadow:0 0 0 1.5px var(--panel)}
+.ruler .mid{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#e53935}
+.row .rn b{display:block;font-family:var(--f-display);font-weight:400;font-size:1.5rem;line-height:1}
+.row .rn small{color:var(--muted);font-size:.72rem}
+.row.front{border-color:var(--sop)}
+.bar{display:flex;height:30px;border-radius:8px;overflow:hidden;gap:2px}
+.seg{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.95rem;min-width:0;font-variant-numeric:tabular-nums}
+.seg.alt{color:#1d1a16}
+.desc{font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.desc b{color:var(--fg)}
+.conductor{text-align:center;color:var(--muted);font-size:.8rem;letter-spacing:.1em}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.95rem}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
+th{font-size:.8rem;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700;border-top:2px solid var(--line)}
+.actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.big{height:56px;border-radius:14px;border:0;background:var(--accent);color:var(--bg);font-size:1.05rem;font-weight:700;cursor:pointer;font-family:var(--f-body)}
+.ghost{height:56px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-size:.95rem;cursor:pointer;font-family:var(--f-body)}
+.toast{color:var(--muted);font-size:.85rem;min-height:1.3em;margin:0}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 14px}
+summary{cursor:pointer;padding:10px 0;font-weight:700}
+.set{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}
+.set input,.set select{height:44px;width:100%;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1rem;text-align:center;font-family:var(--f-body)}
+.set small{display:block;color:var(--muted);font-size:.78rem}
+.empty{text-align:center;color:var(--muted);padding:20px 0}
+textarea.fallback{width:100%;min-height:140px;font-family:var(--f-body);font-size:.9rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>찬양대 줄세우기</h1>
+      <p class="sub">파트별 인원만 넣으면 줄마다 몇 명씩 세울지 나옵니다</p>
+    </div>
+    <div class="total"><b id="tot">0</b><span>총 인원</span></div>
+  </header>
+
+  <section class="inputs" id="inputs"></section>
+
+  <section>
+    <h2>몇 줄로 세울까요?</h2>
+    <div class="rowsel" id="rowsel"><button type="button" data-r="0">AI 추천<small id="recN"></small></button><button type="button" data-r="6">6줄</button><button type="button" data-r="7">7줄</button><button type="button" data-r="8">8줄</button></div>
+    <p class="rowrec" id="rowrec"></p>
+  </section>
+
+  <div>
+    <div class="stage">
+      <span class="cap">3D 찬양대석 · 손가락으로 돌려 보기</span>
+      <div class="colbadge" id="colbadge" hidden aria-live="polite"><small>좌우 총</small><b id="colN">0</b><b><i>줄</i></b></div>
+      <canvas id="cv" aria-label="찬양대석 배치 그림"></canvas>
+      <div id="three" hidden role="img" aria-label="찬양대석 3D 배치. 손가락으로 돌려 볼 수 있습니다"></div>
+      <div class="views" id="views" hidden><button type="button" data-v="front">정면</button><button type="button" data-v="top">위에서</button><button type="button" data-v="side">측면</button></div>
+    </div>
+  </div>
+  <div class="guides"><button type="button" id="gCol" aria-pressed="false">세로줄 보기</button><button type="button" id="gRow" aria-pressed="false">가로줄 보기</button></div>
+  <div class="legend" id="legend"></div>
+  <p class="hint" id="note"></p>
+
+  <section>
+    <h2>줄별 세우기</h2>
+    <p class="hint">지휘자가 바라본 기준, 왼쪽부터 순서대로 세우세요. 줄마다 아래 막대는 장의자 4칸(32석)이고, 점이 서는 자리, 빨간 선이 정중앙입니다. 앞에서 보면 모든 열이 일렬입니다. 아래 버튼을 누르면 2·4·6열이 앞사람 사이사이로 들어갑니다.</p>
+    <button class="ghost" id="zig" type="button" aria-pressed="false" style="width:100%;margin-top:10px"></button>
+  </section>
+  <div class="rows" id="rows"></div>
+  <div class="conductor">▲ 지휘자 ▲</div>
+
+  <section>
+    <h2>요약표</h2>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </section>
+
+  <div class="actions">
+    <button class="big" id="copy">텍스트로 복사 (카톡 공유)</button>
+    <button class="ghost" id="reset">0으로</button>
+  </div>
+  <p class="toast" id="toast" role="status"></p>
+  <textarea class="fallback" id="fallback" hidden readonly aria-label="복사용 텍스트"></textarea>
+
+  <details>
+    <summary>배치 기준 설정</summary>
+    <label class="set" for="th7" hidden>7줄로 세우는 인원<small>이 인원 이상이면 7줄, 미만이면 6줄</small><input id="th7" type="number" inputmode="numeric" min="1"></label>
+    <label class="set" for="maxRow" hidden>한 줄 최대 인원<small>장의자 4개 × 8명 = 32명. 넘으면 줄 수를 늘립니다</small><input id="maxRow" type="number" inputmode="numeric" min="2"></label>
+    <label class="set" for="minRow">장의자 1칸 최소 인원<small>1열과 2열을 합쳐 한 칸에 서는 최소 인원. 이 폭을 지키면서 6줄부터 최대 8줄까지 늘립니다 (기본 4명)</small><input id="minRow" type="number" inputmode="numeric" min="1"></label>
+    <label class="set" for="extra" hidden>남는 인원 배정<small>줄 인원이 딱 나누어지지 않을 때</small>
+      <select id="extra"><option value="front">앞줄부터</option><option value="back">뒷줄부터</option></select></label>
+  </details>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const PARTS=[
+  {k:'S',name:'소프라노',short:'소프',ch:'소',v:'--sop'},
+  {k:'A',name:'알토',short:'알토',ch:'알',v:'--alt'},
+  {k:'T',name:'테너',short:'테너',ch:'테',v:'--ten'},
+  {k:'B',name:'베이스',short:'베이스',ch:'베',v:'--bas'}];
+const ORDER=['S','T','B','A']; // 지휘자 기준 왼→오
+const DEF={S:20,A:18,T:12,B:10,th7:80,maxRow:32,minRow:4,extra:'front',zig:false,gc:false,gr:false,rows:0};
+let st={...DEF};
+try{const s=JSON.parse(localStorage.getItem('choir-v3')||'null');if(s)st={...DEF,...s};}catch(e){}
+function save(){try{localStorage.setItem('choir-v2',JSON.stringify(st));}catch(e){}}
+
+// 누적 반올림: total을 weights 비율대로 정확히 나눔
+function apportion(total,weights){
+  const sum=weights.reduce((a,b)=>a+b,0);const out=[];let prev=0,cum=0;
+  for(const w of weights){cum+=w;const r=sum?Math.round(total*cum/sum+1e-9):0;out.push(r-prev);prev=r;}
+  return out;
+}
+
+function layout(c,opt){
+  const W=c.S+c.A, M0=c.T+c.B, N=W+M0;
+  if(N<=0) return {N,rows:[],dropped:0};
+  const z=!!opt.zig;
+  const k=Math.max(1,opt.minRow||4), oMin=2*k;     // 장의자 1칸 최소 4명(1·2열 합) → 홀수 줄 최소 8명
+  const nO=r=>Math.ceil(r/2), nE=r=>Math.floor(r/2);
+  // 바둑판 격자: 홀수 줄(1·3·5·7) C명, 짝수 줄(2·4·6·8) C+1명. 짝수 줄은 앞사람 사이(반 칸)에 선다
+  const nmin=r=>nO(r)*oMin+nE(r)*(oMin+1);
+  const left=r=>{const C0=Math.floor((N-nE(r))/r);return N-(nO(r)*C0+nE(r)*(C0+1));};
+  // 줄 수: 1·2열 폭을 지키는 선에서 최대한 뒤로(6~8줄). 남는 사람이 3명 이상이면 한 줄 줄여 폭을 넓힘
+  const ok=[8,7,6].filter(r=>r===6||N>=nmin(r));
+  // 딱 나누어떨어지면(전 줄 같은 인원, 한 줄 oMin 이상) 그 줄 수를 우선 추천 (예: 60명 → 6줄×10)
+  const evenOk=r=>N%r===0&&N/r>=oMin;
+  let R=N>=100?8:([8,7,6].find(evenOk)||ok.find(r=>left(r)<=2));
+  if(R===undefined) R=ok.slice().sort((p,q)=>left(p)-left(q)||q-p)[0];
+  const recR=R;
+  if(opt.rows===6||opt.rows===7||opt.rows===8) R=opt.rows;   // 직접 고른 줄 수
+  const ev=(N%R===0&&N/R>=oMin)?0:1;                  // 0: 전 줄 같은 인원, 1: 짝수 줄 +1명
+  const C=Math.max(1,ev?Math.floor((N-nE(R))/R):N/R);
+  const isEven=i=>i%2===1;
+  const back=[];for(let i=2;i<R;i++) back.push(i);
+  const bO=back.filter(i=>!isEven(i)), bE=back.filter(isEven);
+  // 남성: 홀수 줄 mo명, 짝수 줄 me명 (|mo-me|=1, mo는 C와 같은 홀짝) → 어느 줄이든 정확히 정중앙
+  let best=null;
+  for(let mo=0;mo<=Math.min(M0,C);mo++){ if(mo%2!==C%2) continue;
+    for(const me of (ev?[mo+1,mo-1]:[mo])){ if(me<0||me>C+ev) continue;
+      const used=bO.length*mo+bE.length*me; if(used>M0) continue;
+      const rem=M0-used;
+      if(!best||rem<best.rem||(rem===best.rem&&me>mo&&best.me<best.mo)) best={mo,me,rem};
+    }}
+  if(!best) best={mo:0,me:0,rem:M0};
+  const men=new Array(R).fill(0);
+  bO.forEach(i=>men[i]=best.mo); bE.forEach(i=>men[i]=best.me);
+  const dropped=best.rem%2;                      // 1명만 덩그러니 남으면 뺀다
+  let pairs=(best.rem-dropped)/2, guard=0;       // 2명씩 남으면 뒷줄부터 한 줄에 2명씩 더 (좌우 대칭 유지)
+  while(pairs>0&&guard++<50){for(const i of back.slice().reverse()){if(pairs<=0)break;men[i]+=2;pairs--;}}
+  const Mu=M0-dropped;
+  // 3열부터 양옆 여성: 좌우 같은 수
+  const base=[];for(let i=0;i<R;i++) base.push(C+(isEven(i)?ev:0));
+  const wing=new Array(R).fill(0);
+  back.forEach(i=>wing[i]=Math.max(0,Math.floor((base[i]-men[i])/2)));
+  let need=back.reduce((x,i)=>x+wing[i],0);
+  while((need>c.A||need>c.S)&&need>0){back.forEach(i=>{if(wing[i]>0)wing[i]--;});need=back.reduce((x,i)=>x+wing[i],0);}
+  // 앞 2줄(여성): 1열 C명, 2열 C+1명. 알토는 오른쪽부터 꽉 채운 열(홀수면 알토 아랫칸, 소프 윗칸)
+  const Sf=c.S-need, Af=c.A-need, F=Sf+Af;
+  let b1=C, b2=C+ev, e=F-(b1+b2);
+  while(e<0){if(b2>=b1&&b2>0)b2--;else if(b1>0)b1--;else break;e++;}
+  const Ab=Math.min(Af,b1+b2);
+  let a1=Math.min(Math.ceil(Ab/2),b1), a2=Ab-a1; if(a2>b2){a1+=a2-b2;a2=b2;}
+  const s1=b1-a1, s2=b2-a2, eA=Af-Ab, eS=Math.max(0,e-eA);
+  // 남는 여성: 파트 쪽 바깥에 새 세로줄, 1열부터 위로 (홀수 줄 → 짝수 줄)
+  const colFill=n=>{const x=new Array(R).fill(0);let par=0,g=0;while(n>0&&g++<100){for(let i=0;i<R&&n>0;i++){if(i%2===par){x[i]++;n--;}}par=1-par;}return x;};
+  const XL=colFill(eS), XR=colFill(eA);
+  // 테너/베이스: 왼쪽 테너, 오른쪽 베이스. 같은 남성 수의 줄끼리는 같게
+  const tArr=new Array(R).fill(0);
+  const mg={};back.forEach(i=>{(mg[men[i]]=mg[men[i]]||[]).push(i);});
+  const ms=Object.keys(mg).map(Number), tg={};
+  ms.forEach(mv=>tg[mv]=Mu?Math.round(mv*c.T/Mu):0);
+  const totT=()=>ms.reduce((x,mv)=>x+tg[mv]*mg[mv].length,0);
+  let g2=0;
+  while(totT()>c.T&&g2++<300){const mv=ms.filter(v=>tg[v]>0).sort((p,q)=>tg[q]-tg[p])[0];if(mv===undefined)break;tg[mv]--;}
+  while(totT()<c.T&&g2++<600){const mv=ms.filter(v=>tg[v]<v&&(c.T-totT())>=mg[v].length).sort((p,q)=>tg[p]-tg[q])[0];if(mv===undefined)break;tg[mv]++;}
+  ms.forEach(mv=>mg[mv].forEach(i=>tArr[i]=tg[mv]));
+  let tl=Math.min(c.T,Mu)-tArr.reduce((x,y)=>x+y,0);
+  for(const i of back.slice().reverse()){if(tl<=0)break;if(tArr[i]<men[i]){tArr[i]++;tl--;}}
+  const rows=[];
+  for(let i=0;i<R;i++){
+    let r;
+    if(i===0) r={S:s1,A:a1,T:0,B:0}; else if(i===1) r={S:s2,A:a2,T:0,B:0};
+    else r={S:wing[i],A:wing[i],T:tArr[i],B:men[i]-tArr[i]};
+    r.S+=XL[i];r.A+=XR[i];r.xl=XL[i];r.xr=XR[i];r.n=r.S+r.A+r.T+r.B;r.u=r.n;
+    // 격자 위치(반 칸 단위 h): 홀수 줄과 짝수 줄은 홀짝이 다른 칸에 선다 → 앞에서 보면 세로줄이 일직선
+    const nb=r.n-r.xl-r.xr, p=isEven(i)?(C&1):((C-1)&1);
+    let st=-(Math.max(nb,1)-1); if(!ev&&isEven(i)) st=-nb; if((((st%2)+2)%2)!==p) st+=1;
+    st-=2*r.xl; r.h=[];for(let j=0;j<r.n;j++) r.h.push(st+2*j);
+    rows.push(r);
+  }
+  // 간격 기준: 일렬/사이로 어느 쪽이든 가장 바깥 사람이 32석 양 끝에 오도록 (전환해도 간격 그대로)
+  let hmin=Infinity,hmax=-Infinity;
+  rows.forEach((r,i)=>{if(!r.n)return;const sh=isEven(i)?1:0;hmin=Math.min(hmin,r.h[0],r.h[0]+sh);hmax=Math.max(hmax,r.h[r.n-1],r.h[r.n-1]+sh);});
+  return {N,R,recR,dropped,U:C,zig:z,rows,hmin,hmax};
+}
+
+// 좌우 꽉 채우기: 줄마다 인원을 32석(장의자 4칸 × 8석) 폭 전체에 고르게 펼친다
+// 사이로: 짝수 줄은 대원 기준 오른쪽(지휘자 기준 왼쪽)으로 반 칸. 전체 균형을 위해 홀수 줄 +1/4칸, 짝수 줄 -1/4칸
+function seatPos(L,i){const r=L.rows[i];if(!r||!r.n) return [];
+  const sh=(!L.zig&&i%2===1)?1:0;   // 일렬: 짝수 줄도 홀수 줄과 같은 칸. 사이로: 짝수 줄이 대원 기준 오른쪽(지휘자 기준 왼쪽)으로 반 칸
+  const u=32/(L.hmax-L.hmin+2);
+  return r.h.map(h=>(h+sh-L.hmin+1)*u);}
+
+// ---------- UI ----------
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const inputs=document.getElementById('inputs');
+PARTS.forEach(p=>{
+  const d=document.createElement('div');d.className='part';
+  d.innerHTML=`<div class="name"><span class="dot" style="background:var(${p.v})"></span>${p.name}<small>${p.k==='S'||p.k==='A'?'여성':'남성'}</small></div>
+  <div class="stepper"><button type="button" aria-label="${p.name} 한 명 빼기" data-k="${p.k}" data-d="-1">−</button>
+  <input id="in-${p.k}" type="number" inputmode="numeric" min="0" max="200" aria-label="${p.name} 인원">
+  <button type="button" aria-label="${p.name} 한 명 더하기" data-k="${p.k}" data-d="1">+</button></div>`;
+  inputs.appendChild(d);
+});
+inputs.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  const k=b.dataset.k;st[k]=Math.max(0,Math.min(200,(st[k]|0)+ +b.dataset.d));sync();render();});
+PARTS.forEach(p=>{const el=document.getElementById('in-'+p.k);
+  el.addEventListener('input',()=>{const v=parseInt(el.value,10);st[p.k]=isNaN(v)?0:Math.max(0,Math.min(200,v));render();});
+  el.addEventListener('focus',()=>el.select());
+  el.addEventListener('blur',()=>{el.value=st[p.k];});});
+['th7','maxRow','minRow'].forEach(k=>{const el=document.getElementById(k);
+  el.addEventListener('input',()=>{const v=parseInt(el.value,10);if(!isNaN(v)&&v>0){st[k]=v;render();}});});
+document.getElementById('extra').addEventListener('change',e=>{st.extra=e.target.value;render();});
+document.getElementById('rowsel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st.rows=+b.dataset.r;render();});
+document.getElementById('zig').addEventListener('click',()=>{st.zig=!st.zig;render();});
+document.getElementById('gCol').addEventListener('click',()=>{st.gc=!st.gc;render();});
+document.getElementById('gRow').addEventListener('click',()=>{st.gr=!st.gr;render();});
+document.getElementById('reset').addEventListener('click',()=>{PARTS.forEach(p=>st[p.k]=0);sync();render();});
+function sync(){PARTS.forEach(p=>document.getElementById('in-'+p.k).value=st[p.k]);
+  ['th7','maxRow','minRow'].forEach(k=>document.getElementById(k).value=st[k]);document.getElementById('extra').value=st.extra;}
+
+document.getElementById('legend').innerHTML=ORDER.map(k=>{const p=PARTS.find(x=>x.k===k);
+  return `<span><span class="dot" style="background:var(${p.v})"></span>${p.name}</span>`}).join('')+'<span>← 왼쪽 · 오른쪽 →</span>';
+
+let last=null;
+function render(){
+  save();
+  const L=layout({S:st.S,A:st.A,T:st.T,B:st.B},st);last=L;
+  document.getElementById('tot').textContent=L.N;
+  {const rs=document.getElementById('rowsel');
+   [...rs.children].forEach(b=>b.setAttribute('aria-pressed',(+b.dataset.r)===(st.rows|0)));
+   document.getElementById('recN').textContent=L.N?L.recR+'줄 추천':'';
+   const rr=document.getElementById('rowrec');
+   const ck=new Set();L.rows.forEach((r,i)=>{for(let j=0;j<r.n;j++)ck.add(r.h[j]+((!L.zig&&i%2===1)?1:0));});
+   {const cb=document.getElementById('colbadge');cb.hidden=!L.N;document.getElementById('colN').textContent=ck.size;}
+   rr.textContent=!L.N?'':((st.rows&&st.rows!==L.recR)?`직접 선택: ${L.R}줄 (이 인원 추천은 ${L.recR}줄)`:`이 인원은 ${L.recR}줄로 세우는 것을 추천합니다`)+` · 좌우 세로줄 총 ${ck.size}줄`;}
+  document.getElementById('gCol').setAttribute('aria-pressed',!!st.gc);document.getElementById('gRow').setAttribute('aria-pressed',!!st.gr);
+  const zb=document.getElementById('zig');zb.setAttribute('aria-pressed',st.zig);zb.textContent=st.zig?'일렬로 되돌리기 (지금: 2·4·6열 사이로)':'2·4·6열 앞사람 사이로 세우기 (지금: 일렬)';
+  document.getElementById('note').textContent=L.dropped?'남성 1명은 혼자 서게 되어 이번 배치에서 뺐습니다. (쉬는 인원)':'';
+  const rowsEl=document.getElementById('rows');
+  if(!L.N){rowsEl.innerHTML='<div class="empty">위에서 파트별 인원을 넣으면 배치가 나옵니다</div>';document.getElementById('tbl').innerHTML='';draw(L);return;}
+  let h='';
+  for(let i=L.R-1;i>=0;i--){const r=L.rows[i];
+    const segs=ORDER.filter(k=>r[k]>0).map(k=>{const p=PARTS.find(x=>x.k===k);
+      return `<div class="seg ${k==='A'?'alt':''}" style="flex:${r[k]};background:var(${p.v})">${r[k]}</div>`}).join('');
+    const desc=ORDER.filter(k=>r[k]>0).map(k=>`${PARTS.find(x=>x.k===k).short} <b>${r[k]}</b>`).join(' → ');
+    const tag=i<2?'여성 앞줄':(L.zig&&i%2===1?'사이로':'');
+    h+=`<div class="row ${i<2?'front':''}"><div class="rn"><b>${i+1}열</b><small>${r.n}명${tag?'<br>'+tag:''}</small></div>
+      <div class="bar">${segs}</div><div class="desc">${desc}${(r.xl||r.xr)?` <b>· 가장자리 추가 ${(r.xl||0)+(r.xr||0)}명</b>`:''}</div>${ruler(r,i)}</div>`;
+  }
+  rowsEl.innerHTML=h;
+  function ruler(r,i){
+    const P=seatPos(L,i), G=P.map(p=>p-16), sp=32/Math.max(1,P.length), seq=[];ORDER.forEach(k=>{for(let n=0;n<r[k];n++)seq.push(k);});
+    const dots=seq.map((k,j)=>{const p=P[j];return `<i style="left:${(p/32*100).toFixed(2)}%;background:var(${PARTS.find(x=>x.k===k).v})"></i>`;}).join('');
+    let mid='';const c=G.findIndex(g=>Math.abs(g)<0.05*sp);
+    if(c>=0) mid=`정중앙: 왼쪽에서 <b>${c+1}번째</b>`;
+    else{const j=G.findIndex((g,q)=>g<0&&G[q+1]>0);if(j>=0) mid=`정중앙: <b>${j+1}·${j+2}번째 사이</b>`;}
+    const first=Math.floor(P[0])+1;
+    return `<div class="ruler" aria-hidden="true"><span></span><span></span><span></span><span></span><b class="mid"></b>${dots}</div>
+      <div class="desc">${mid} · 왼쪽 끝 사람 <b>${first}번 자리</b> · <b>${sp.toFixed(1)}석</b>마다 1명</div>`;
+  }
+  let t='<thead><tr><th>열</th>'+ORDER.map(k=>`<th>${PARTS.find(x=>x.k===k).short}</th>`).join('')+'<th>계</th></tr></thead><tbody>';
+  for(let i=L.R-1;i>=0;i--){const r=L.rows[i];t+=`<tr><td>${i+1}열</td>`+ORDER.map(k=>`<td>${r[k]||'–'}</td>`).join('')+`<td><b>${r.n}</b></td></tr>`;}
+  t+='</tbody><tfoot><tr><td>합계</td>'+ORDER.map(k=>`<td>${st[k]}</td>`).join('')+`<td>${L.N}</td></tr></tfoot>`;
+  document.getElementById('tbl').innerHTML=t;
+  draw(L);
+}
+
+// ---------- 3D 찬양대석 ----------
+const cv=document.getElementById('cv');
+function draw2d(L){
+  const w=cv.clientWidth||360, R=8;
+  const hgt=Math.round(w*0.82);
+  const dpr=window.devicePixelRatio||1;
+  cv.width=w*dpr;cv.height=hgt*dpr;cv.style.height=hgt+'px';
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,hgt);
+  const cx=w/2, k=0.075, baseY=hgt*0.86, step=hgt*0.092, depth=hgt*0.05;
+  const s=i=>1/(1+k*i);
+  const hw=i=>w*0.46*s(i);
+  const yF=i=>baseY-i*step*(1-0.03*i);
+  const wood=css('--wood'),top=css('--wood-top'),dark=css('--wood-dark'),fg=css('--fg'),mut=css('--muted');
+  for(let i=R-1;i>=0;i--){
+    const y=yF(i), yb=y-depth*s(i), w1=hw(i), w2=hw(i+0.6);
+    g.fillStyle=top;g.beginPath();g.moveTo(cx-w1,y);g.lineTo(cx+w1,y);g.lineTo(cx+w2,yb);g.lineTo(cx-w2,yb);g.closePath();g.fill();
+    const yr=i===0?baseY+step*0.55:yF(i-1)-depth*s(i-1);
+    g.fillStyle=i%2?wood:dark;g.globalAlpha=0.85;
+    g.beginPath();g.moveTo(cx-w1,y);g.lineTo(cx+w1,y);g.lineTo(cx+w1,Math.max(y,yr));g.lineTo(cx-w1,Math.max(y,yr));g.closePath();g.fill();g.globalAlpha=1;
+  }
+  // 장의자 4개 구분선
+  g.strokeStyle=dark;g.lineWidth=1.5;g.globalAlpha=0.7;
+  for(const f of [-0.5,0,0.5]){g.beginPath();g.moveTo(cx+f*2*hw(0),yF(0));g.lineTo(cx+f*2*hw(R-1),yF(R-1)-depth*s(R-1));g.stroke();}
+  g.globalAlpha=1;
+  g.fillStyle=mut;g.font=`600 ${Math.max(10,w*0.028)}px ${css('--f-body')}`;g.textAlign='left';g.textBaseline='middle';
+  for(let i=0;i<R;i++){g.fillText(`${i+1}`,cx-hw(i)-2-w*0.035,yF(i)-depth*s(i)*0.5);}
+  g.fillStyle=fg;g.beginPath();g.arc(cx,hgt-12,6,0,Math.PI*2);g.fill();
+  if(!L.N) return;
+  // 사람 (뒤 → 앞). 여성 1칸, 남성 2칸. 모든 줄이 같은 폭을 쓰고, 짝수 열은 양끝이 반 칸씩 안쪽으로 들어온다.
+  for(let i=L.R-1;i>=0;i--){
+    const r=L.rows[i], st=i, si=s(st);
+    const seq=[];ORDER.forEach(k=>{for(let n=0;n<r[k];n++)seq.push({k});});
+    const C=L.U, nn=seq.length||1;
+    const span=2*hw(st)*0.94;
+    const unit=span/Math.max(C,nn);
+    const footY=yF(st)-depth*si*0.45;
+    const sz=Math.min(unit*0.42,w*0.032*si);
+    let j=0;
+    for(const it of seq){
+      // 홀수 열은 같은 줄, 짝수 열은 앞줄 사이(반 칸)에 서서 앞에서 보면 열이 일직선
+      let t;
+      if(i%2===0||!L.zig) t=(nn===C)?(j+0.5)/C:(j+0.5)/nn;
+      else t=(nn===C-1)?(j+1)/C:(j+0.5)/nn;
+      j++;
+      const x=cx+(t-0.5)*span;
+      const p=PARTS.find(q=>q.k===it.k);const col=css(p.v);
+      const bh=sz*2.6, bw=sz*1.5;
+      g.fillStyle='rgba(0,0,0,.22)';g.beginPath();g.ellipse(x,footY,bw*0.6,sz*0.28,0,0,Math.PI*2);g.fill();
+      g.fillStyle=col;
+      const bx=x-bw/2, by=footY-bh, rr=bw*0.45;
+      g.beginPath();g.moveTo(bx+rr,by);g.lineTo(bx+bw-rr,by);g.quadraticCurveTo(bx+bw,by,bx+bw,by+rr);
+      g.lineTo(bx+bw,footY);g.lineTo(bx,footY);g.lineTo(bx,by+rr);g.quadraticCurveTo(bx,by,bx+rr,by);g.fill();
+      g.beginPath();g.arc(x,by-sz*0.7,sz*0.68,0,Math.PI*2);g.fill();
+      if(sz>=7){g.fillStyle=p.k==='A'?'#1d1a16':'#fff';g.font=`700 ${sz*1.05}px ${css('--f-body')}`;g.textAlign='center';g.textBaseline='middle';g.fillText(p.ch,x,by+bh*0.42);}
+    }
+  }
+}
+
+// ---------- 3D 찬양대석 (three.js) ----------
+const G={rows:8,D:0.85,H:0.42,W:18,Rc:24};
+let T3=null,T3fail=false;
+function init3d(){
+  if(!window.THREE||!THREE.OrbitControls) return null;
+  try{
+    const el=document.getElementById('three');
+    const renderer=new THREE.WebGLRenderer({antialias:true});
+    el.hidden=false;cv.hidden=true;document.getElementById('views').hidden=false;
+    renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.outputEncoding=THREE.sRGBEncoding;
+    el.appendChild(renderer.domElement);
+    const scene=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(40,4/3,0.1,300);
+    const ctl=new THREE.OrbitControls(cam,renderer.domElement);
+    ctl.enablePan=false;ctl.minDistance=6;ctl.maxDistance=55;ctl.maxPolarAngle=Math.PI*0.49;
+    ctl.minAzimuthAngle=-Math.PI*0.55;ctl.maxAzimuthAngle=Math.PI*0.55;
+    const render=()=>renderer.render(scene,cam);
+    ctl.addEventListener('change',render);
+
+    const M=o=>new THREE.MeshStandardMaterial(o);
+    const mat={
+      cream:M({color:0xd6c9b3,roughness:.9}), creamDark:M({color:0xbfae94,roughness:.95}), creamTop2:M({color:0xd3c5ad,roughness:.85}), creamTop:M({color:0xe2d7c4,roughness:.85}),
+      wood:M({color:0xb67f45,roughness:.5}), woodDark:M({color:0x7f5228,roughness:.55}),
+      wall:M({color:0xae8150,roughness:.75}), wallLight:M({color:0xc39563,roughness:.65}),
+      stair:M({color:0x56504b,roughness:.85}), floor:M({color:0xa47648,roughness:.55}),
+      dark:M({color:0x3a2a20,roughness:.9}), black:M({color:0x141414,roughness:.6}),
+      pipe:M({color:0xe9ecee,metalness:.55,roughness:.25}),
+      light:new THREE.MeshBasicMaterial({color:0xfffbf0}), exit:new THREE.MeshBasicMaterial({color:0x1fbf5a})};
+    const put=(geo,m,x,y,z,ry=0,cast=true)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.rotation.y=ry;o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;};
+    const box=(w,h,d,m,x,y,z,ry=0,cast=true)=>put(new THREE.BoxGeometry(w,h,d),m,x,y,z,ry,cast);
+    const {rows,D,H,W,Rc}=G, half=(W/2)/Rc, topAll=rows*H;
+    const P=(r,t)=>[r*Math.sin(t),Rc-r*Math.cos(t)];
+    // 고리 조각(부채꼴) 블록: 반지름 r1~r2, 각도 a0~a1(0=정면, +=오른쪽), 높이 h
+    const sector=(r1,r2,a0,a1,h,y0,m,cast=true)=>{
+      const sh=new THREE.Shape(), A0=Math.PI/2-a1, A1=Math.PI/2-a0;
+      sh.absarc(0,0,r2,A0,A1,false);sh.absarc(0,0,r1,A1,A0,true);
+      const g=new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false,curveSegments:64});
+      g.rotateX(-Math.PI/2);
+      const o=new THREE.Mesh(g,m);o.position.set(0,y0,Rc);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o;};
+
+    box(50,0.1,34,mat.floor,0,-0.05,4,0,false);                 // 무대 바닥
+    const sw=1.05/Rc, rail=0.25/Rc;
+    const rb=Rc+(rows-1)*D+D/2, edge=half+sw+rail;
+    for(let i=0;i<rows;i++){                                      // 크림색 계단 8단
+      const r1=Rc+i*D-D/2, r2=Rc+i*D+D/2, top=(i+1)*H;
+      sector(r1,r2,-half,half,top-0.05,0,mat.cream);
+      sector(r1-0.012,r1,-half,half,top-0.06,0,mat.creamDark);          // 앞면(한 톤 어둡게)
+      sector(r1+0.06,r2,-half,half,0.05,top-0.05,i%2?mat.creamTop2:mat.creamTop);   // 단마다 색을 번갈아
+      sector(r1-0.02,r1+0.06,-half,half,0.06,top-0.055,mat.wood);       // 앞 모서리 나무띠
+      for(const t of [-half/2,0,half/2]){                               // 장의자 4칸 나무 칸막이
+        const dw=0.09/r1;
+        sector(r1-0.03,r2,t-dw,t+dw,top+0.14,0,mat.woodDark);
+      }
+      for(const sgn of [-1,1]){                                   // 양옆 계단 + 곡선 난간
+        const a=sgn<0?[-half-sw,-half]:[half,half+sw];
+        sector(r1,r1+D/2,a[0],a[1],top-H/2,0,mat.stair);
+        sector(r1+D/2,r2,a[0],a[1],top,0,mat.stair);
+        const b=sgn<0?[-edge,-half-sw]:[half+sw,edge];
+        sector(r1,r2,b[0],b[1],top+0.5,0,mat.wood);
+      }
+    }
+    sector(rb,rb+6,-edge,edge,topAll+0.55,0,mat.wall);             // 맨 뒷단(8단) 뒤 나무벽
+    sector(rb,rb+0.08,-edge,edge,0.06,topAll+0.55,mat.woodDark);
+    sector(Rc-D/2-0.12,Rc-D/2,-half-sw-rail,half+sw+rail,H+0.12,0,mat.wood);   // 앞 나무 벽
+    const zW=-(rows-1)*D-D/2-1.1;
+        box(34,16,0.3,mat.wall,0,8,zW-0.15,0,false);                  // 뒷벽
+    box(34,0.3,0.06,mat.woodDark,0,topAll+2.55,zW+0.03,0,false);  // 장식 띠
+    box(34,0.9,0.04,mat.wallLight,0,topAll+0.45,zW+0.02,0,false);
+    for(const x of [-3.3,3.3]) put(new THREE.CylinderGeometry(0.62,0.62,4.7,40),mat.wallLight,x,topAll+2.35,zW+0.45);   // 원기둥
+    for(const x of [-9.6,9.6]){box(1.1,2.25,0.08,mat.woodDark,x,topAll+1.12,zW+0.05,0,false);box(0.34,0.17,0.05,mat.exit,x,topAll+2.95,zW+0.06,0,false);}
+    const bb=topAll+4.7;                                          // 오르간 발코니
+    box(23,1.5,1.9,mat.wallLight,0,bb+0.75,zW+0.95);
+    for(let k=0;k<15;k++) box(1.42,0.95,0.04,mat.wood,-10.5+k*1.5,bb+0.75,zW+1.92,0,false);
+    box(23.3,0.14,2.0,mat.woodDark,0,bb+1.55,zW+0.98);
+    for(let k=-3;k<=3;k++) put(new THREE.CylinderGeometry(0.13,0.13,0.02,20),mat.light,k*2.9,bb-0.01,zW+1.4,0,false);   // 다운라이트
+    const ob=bb+1.62;
+    box(19.5,5,0.6,mat.wood,0,ob+2.5,zW+0.15);
+    const archG=new THREE.CylinderGeometry(0.36,0.36,0.05,20,1,false,Math.PI/2,Math.PI);archG.rotateX(Math.PI/2);
+    for(let k=-7;k<=7;k++){box(0.72,0.55,0.05,mat.dark,k*1.22,ob+0.4,zW+0.47,0,false);put(archG,mat.dark,k*1.22,ob+0.675,zW+0.47,0,false);}
+    const pipeG=new THREE.CylinderGeometry(0.09,0.09,1,16);
+    const towers=[[-6.6,3.6],[-4.7,2.9],[-2.9,2.2],[-1,3.2],[1,3.2],[2.9,2.2],[4.7,2.9],[6.6,3.6]];
+    towers.forEach(([x0,h])=>{const x=x0*1.22;
+      box(1.5,h+0.5,0.5,mat.wood,x,ob+1+(h+0.5)/2,zW+0.3);
+      for(let p=0;p<6;p++){const ph=h*(0.62+0.38*Math.sin(Math.PI*(p+0.5)/6));const o=put(pipeG,mat.pipe,x-0.55+p*0.22,ob+1.15+ph/2,zW+0.62,0,true);o.scale.y=ph;}
+    });
+    box(0.9,5.2,0.9,mat.black,-13.6,topAll+4.4,1.2);              // 스피커
+
+    scene.add(new THREE.HemisphereLight(0xfff1dc,0x6b4a2c,0.42));
+    const sun=new THREE.DirectionalLight(0xfff0dc,0.72);sun.position.set(4,18,17);sun.castShadow=true;
+    const ms=(window.devicePixelRatio||1)>1.5?1536:2048;sun.shadow.mapSize.set(ms,ms);
+    Object.assign(sun.shadow.camera,{left:-21,right:21,top:18,bottom:-12,near:1,far:80});sun.shadow.bias=-0.0005;
+    sun.target.position.set(0,2,-3);scene.add(sun,sun.target);
+    const fill=new THREE.DirectionalLight(0xffe8cc,0.3);fill.position.set(-9,7,12);scene.add(fill);
+    const spot=new THREE.SpotLight(0xffe2b8,0.55,70,0.6,0.7);spot.position.set(0,17,9);spot.target.position.set(0,2,-3);scene.add(spot,spot.target);
+
+    const label=t=>{const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d');
+      g.fillStyle='rgba(29,26,22,.85)';g.beginPath();g.arc(48,48,42,0,Math.PI*2);g.fill();
+      g.fillStyle='#fff';g.font='700 50px "IBM Plex Sans KR",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,48,52);
+      const tx=new THREE.CanvasTexture(c);tx.encoding=THREE.sRGBEncoding;
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));sp.scale.set(0.55,0.55,1);return sp;};
+    for(let i=0;i<rows;i++){const sp=label(String(i+1));const [x,z]=P(Rc+i*D,-half-1.7/Rc);sp.position.set(x,(i+1)*H+0.35,z);scene.add(sp);}
+
+    const people=new THREE.Group();scene.add(people);
+    const colG=new THREE.Group(), rowG=new THREE.Group();scene.add(colG,rowG);
+    const legG=new THREE.CylinderGeometry(0.16,0.14,0.8,14), bodyG=new THREE.CylinderGeometry(0.21,0.25,0.66,18);
+    const shG=new THREE.SphereGeometry(0.21,18,12), headG=new THREE.SphereGeometry(0.125,22,16);
+    const hairG=new THREE.SphereGeometry(0.135,22,16,0,Math.PI*2,0,Math.PI*0.55);
+    const legMat=M({color:0x2b2d36,roughness:.7}), skin=M({color:0xf0c8a0,roughness:.6}), hair=M({color:0x2a1f19,roughness:.8});
+    const partMat={};PARTS.forEach(p=>partMat[p.k]=M({color:0x888888,roughness:.55}));
+    const conMat=M({color:0x1c1c20,roughness:.6});
+    const centerMat=new THREE.MeshBasicMaterial({color:0xe53935,transparent:true,opacity:0.95,depthTest:false});
+    const guideG=new THREE.CylinderGeometry(0.08,0.08,1,8), guideMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.95,depthTest:false});
+    const ringG=new THREE.RingGeometry(0.3,0.42,32), ringMat=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide});
+    const fig=(x,y,z,m,male,ry=0)=>{
+      const g=new THREE.Group();
+      const add=(geo,mm,yy,sx=1,sy=1,sz=1)=>{const o=new THREE.Mesh(geo,mm);o.position.y=yy;o.scale.set(sx,sy,sz);o.castShadow=true;g.add(o);return o;};
+      add(legG,legMat,0.4);add(bodyG,m,0.8+0.33);add(shG,m,0.8+0.64,1,0.45,0.82);
+      add(headG,skin,0.8+0.66+0.2);const hr=add(hairG,hair,0.8+0.66+0.21);hr.rotation.x=-0.25;
+      const s=male?1.16:1.08;g.scale.set(s,s,s);g.position.set(x,y,z);g.rotation.y=ry;people.add(g);};
+    box(1.1,0.25,1.1,mat.woodDark,0,0.125,3.2);
+    fig(0,0.25,3.2,conMat,false,Math.PI);
+    const conductorIdx=people.children.length;
+
+    const views={front:{p:[0,5.6,22.5],t:[0,3.6,-2.5]},top:{p:[0,29,5],t:[0,1.5,-3]},side:{p:[18,8.5,15],t:[0,2.6,-3]}};
+    const setView=v=>{cam.position.set(...views[v].p);ctl.target.set(...views[v].t);ctl.update();
+      document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));render();};
+    document.getElementById('views').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v);});
+    const size=()=>{const w=el.clientWidth||360,h=Math.round(w*0.82);renderer.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix();render();};
+    if(window.ResizeObserver) new ResizeObserver(size).observe(el); else window.addEventListener('resize',size);
+    size();setView('front');
+
+    const update=L=>{
+      scene.background=new THREE.Color(0x8a6340);
+      PARTS.forEach(p=>partMat[p.k].color.set(css(p.v)||'#888'));
+      while(people.children.length>conductorIdx) people.remove(people.children[people.children.length-1]);
+      while(colG.children.length) colG.remove(colG.children[0]);
+      while(rowG.children.length) rowG.remove(rowG.children[0]);
+      if(L&&L.N){
+        const maxN=Math.max(...L.rows.map(r=>r.n));
+        const unit=W/32;   // 1석 폭
+        const cols={}, rws={};
+        for(let i=0;i<L.R;i++){
+          const r=L.rows[i], seq=[];ORDER.forEach(k=>{for(let n=0;n<r[k];n++)seq.push(k);});
+          // 모든 줄이 같은 간격의 칸. 홀수 열은 정칸, (사이로 모드의) 짝수 열은 반칸
+          const nn=seq.length, xl=r.xl||0, nb=nn-xl-(r.xr||0);
+          const h0=(L.U+1)%2, hf=h0, par=(nb+1)%2;
+          const shift=(par!==hf)?0.5:0;
+          const rr=Rc+i*D-D*0.12;
+          const GG=seatPos(L,i);
+          seq.forEach((k,j)=>{
+            const g=GG[j]-16;   // 사이로: 2·4·6열은 대원 기준 오른쪽(지휘자 기준 왼쪽)으로 반 칸
+            const x=g*unit, z=Rc-Math.sqrt(Math.max(rr*rr-x*x,0)), t=Math.asin(Math.max(-1,Math.min(1,x/rr)));   // 같은 세로줄은 좌우 위치가 완전히 같다
+            fig(x,(i+1)*H,z,partMat[k],k==='T'||k==='B',-t);
+            const hy=(i+1)*H+(k==='T'||k==='B'?2.12:1.98);const key=r.h[j]+((!L.zig&&i%2===1)?1:0);(cols[key]=cols[key]||[]).push([x,hy,z]);(rws[i]=rws[i]||[]).push([x,hy,z]);
+            if(j<xl||j>=nn-(r.xr||0)){const rg=new THREE.Mesh(ringG,ringMat);rg.rotation.x=-Math.PI/2;rg.position.set(x,(i+1)*H+0.02,z);people.add(rg);}   // 가장자리 추가 인원 표시
+          });
+        }
+        // 줄 보기: 머리 위로 흰 선 (사람에게 가려지지 않게 맨 앞에 그림)
+        const up=new THREE.Vector3(0,1,0);
+        const seg=(grp,a,b,m=guideMat)=>{const p0=new THREE.Vector3(...a), p1=new THREE.Vector3(...b), d=p1.clone().sub(p0), len=d.length();
+          const ln=new THREE.Mesh(guideG,m);ln.scale.y=len;ln.renderOrder=10;
+          ln.position.copy(p0).add(p1).multiplyScalar(0.5);ln.quaternion.setFromUnitVectors(up,d.normalize());grp.add(ln);};
+        Object.values(cols).forEach(p=>{for(let q=1;q<p.length;q++) seg(colG,p[q-1],p[q]);});   // 같은 칸(세로줄)끼리 잇기
+        Object.values(rws).forEach(p=>{for(let q=1;q<p.length;q++) seg(rowG,p[q-1],p[q]);});
+        // 세로줄 번호: 왼쪽부터 1,2,3… (맨 뒤 사람 머리 위). 마지막 번호 = 좌우 총 줄 수
+        Object.keys(cols).map(Number).sort((a,b)=>a-b).forEach((kk,n)=>{const p=cols[kk],t=p[p.length-1];
+          const sp=label(String(n+1));sp.scale.set(0.6,0.6,1);sp.position.set(t[0],t[1]+0.6,t[2]);sp.renderOrder=11;colG.add(sp);});
+        for(let i=0;i<rows;i++) seg(colG,[0,(i+1)*H+0.03,-i*D+D/2],[0,(i+1)*H+0.03,-i*D-D/2],centerMat);   // 빨간 정중앙선
+      }
+      colG.visible=!!st.gc;rowG.visible=!!st.gr;
+      render();
+    };
+    return {update};
+  }catch(e){console.error(e);return null;}
+}
+function draw(L){
+  if(!T3&&!T3fail){T3=init3d();if(!T3)T3fail=true;}
+  if(T3) T3.update(L); else draw2d(L);
+}
+
+// ---------- 복사 ----------
+function text(){
+  const L=last;if(!L||!L.N)return '';
+  let t=`찬양대 배치 (총 ${L.N}명: 소프${st.S} 알토${st.A} 테너${st.T} 베이스${st.B})\n지휘자 기준 왼쪽부터\n`;
+  for(let i=L.R-1;i>=0;i--){const r=L.rows[i];
+    t+=`${i+1}열(${r.n}명): `+ORDER.filter(k=>r[k]>0).map(k=>`${PARTS.find(x=>x.k===k).short}${r[k]}`).join(' ')+'\n';}
+  return t+(L.dropped?'\n※ 남성 1명 쉼':'')+(st.zig?'\n※ 2·4·6열은 앞사람 사이로':'\n※ 모든 열 일렬');
+}
+const toast=document.getElementById('toast'),fb=document.getElementById('fallback');
+document.getElementById('copy').addEventListener('click',()=>{
+  const t=text();if(!t){toast.textContent='먼저 인원을 넣어 주세요';return;}
+  const fall=()=>{fb.hidden=false;fb.value=t;fb.focus();fb.select();toast.textContent='아래 글을 길게 눌러 복사하세요';};
+  try{navigator.clipboard.writeText(t).then(()=>{fb.hidden=true;toast.textContent='복사했습니다. 카톡에 붙여넣으세요';},fall);}catch(e){fall();}
+});
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>draw(last||{N:0}),120);});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>draw(last||{N:0}));
+new MutationObserver(()=>draw(last||{N:0})).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+sync();render();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>draw(last||{N:0}));
+</script>
